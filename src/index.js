@@ -69,6 +69,21 @@ app.get('/statement', (req, res) => {
   return res.json(costumer.statement);
 });
 
+app.get('/statement/date', (req, res) => {
+  const { costumer } = req;
+  const { date } = req.query;
+
+  const dateFormat = new Date(date + ' 00:00');
+
+  const statemet = customer.statement.filter(
+    (statement) =>
+      statement.created_at.toDateString() ===
+      new Date(dateFormat).toDateString()
+  );
+
+  return res.json(statemet);
+});
+
 app.post('/deposit', (req, res) => {
   const { description, amount } = req.body;
 
