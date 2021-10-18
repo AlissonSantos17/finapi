@@ -6,19 +6,19 @@ const app = express();
 
 app.use(express.json());
 
-const custumers = [];
+const customers = [];
 
 // Middleware
 function verifyIfExistsAccountCpf(req, res, next) {
   const { cpf } = req.headers;
 
-  const custumer = custumers.find((custumer) => custumer.cpf === cpf);
+  const customer = customers.find((customer) => customer.cpf === cpf);
 
-  if (!custumer) {
-    return res.status(400).json({ error: 'Custumer not found' });
+  if (!customer) {
+    return res.status(400).json({ error: 'customer not found' });
   }
 
-  req.custumer = custumer;
+  req.customer = customer;
 
   return next();
 }
@@ -44,33 +44,33 @@ function getBalance(statement) {
 app.post('/account', (req, res) => {
   const { cpf, name } = req.body;
 
-  const custumerAlreadyExists = custumers.some(
-    (custumer) => custumer.cpf === cpf
+  const customerAlreadyExists = customers.some(
+    (customer) => customer.cpf === cpf
   );
 
-  if (custumerAlreadyExists) {
-    return res.status(400).json({ error: 'Custumer alread exists' });
+  if (customerAlreadyExists) {
+    return res.status(400).json({ error: 'customer alread exists' });
   }
 
-  custumers.push({
+  customers.push({
     cpf,
     name,
     id: uuidv4(),
     statement: [],
   });
 
-  return res.status(201).send(custumers);
+  return res.status(201).send(customers);
 });
 
 app.use(verifyIfExistsAccountCpf);
 
 app.get('/statement', (req, res) => {
-  const { custumer } = req;
-  return res.json(custumer.statement);
+  const { customer } = req;
+  return res.json(customer.statement);
 });
 
 app.get('/statement/date', (req, res) => {
-  const { custumer } = req;
+  const { customer } = req;
   const { date } = req.query;
 
   const dateFormat = new Date(date + ' 00:00');
@@ -87,7 +87,7 @@ app.get('/statement/date', (req, res) => {
 app.post('/deposit', (req, res) => {
   const { description, amount } = req.body;
 
-  const { custumer } = req;
+  const { customer } = req;
 
   const statementOperation = {
     description,
@@ -96,16 +96,16 @@ app.post('/deposit', (req, res) => {
     type: 'credit',
   };
 
-  custumer.statement.push(statementOperation);
+  customer.statement.push(statementOperation);
 
   return res.status(201).send();
 });
 
 app.post('/withdraw', (req, res) => {
   const { amount } = req.body;
-  const { custumer } = req;
+  const { customer } = req;
 
-  const balance = getBalance(custumer.statement);
+  const balance = getBalance(customer.statement);
 
   if (balance < amount) {
     res.status(400).json({ error: 'Insuficient funds!' });
@@ -117,24 +117,40 @@ app.post('/withdraw', (req, res) => {
     type: 'debit',
   };
 
-  custumer.statement.push(statementOperation);
+  customer.statement.push(statementOperation);
 
   return res.status(201).send();
 });
 
 app.put('/account', (req, res) => {
   const { name } = req.body;
-  const { custumer } = req;
+  const { customer } = req;
 
-  custumer.name = name;
+  customer.name = name;
 
   return res.status(201).send();
 });
 
 app.get('/account', (req, res) => {
-  const { custumer } = req;
+  const { customer } = req;
 
-  return res.json(custumer);
+  return res.json(customer);
+});
+
+app.delete('/account', (req, res) => {
+  const { customer } = req;
+
+  customers.slice(customer, 1);
+
+  return res.status(200).json(customers);
+});
+
+app.get('/balance', (req, res) => {
+  const { customer } = request;
+
+  const balance = getBalance(customer.statement);
+
+  return res.json(balance);
 });
 
 app.listen(3333);
